@@ -12,11 +12,13 @@ use pocketmine\item\StringToItemParser;
 use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\StringToEffectParser;
 use pocketmine\item\Item;
-// Usando as classes que você já validou no BugReportLite
-use BugReportLite\Forms\SimpleForm;
+
+// --- ALTERADO: Agora aponta para a pasta interna do SurvivalKits ---
+use SurvivalKits\Forms\SimpleForm; 
+// ------------------------------------------------------------------
 
 class KitManager {
-
+    // ... resto do código igual ...
     private Main $plugin;
     private Config $data;
     private array $cooldowns = [];
@@ -149,3 +151,4 @@ class KitManager {
         return ($left <= 0) ? "§aPronto" : TimeUtils::formatTime($left);
     }
 }
+
