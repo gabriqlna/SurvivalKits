@@ -1,0 +1,51 @@
+# Configuração Principal do SurvivalKits+
+
+settings:
+  prefix: "§l§6[Kits] §r"
+  # Sons: random.pop, random.levelup, random.totem
+  sound-success: "random.levelup"
+  sound-error: "note.bass"
+
+# Mensagens
+messages:
+  received: "§aVocê recebeu o kit §e{KIT}§a!"
+  cooldown: "§cAguarde §e{TIME} §cpara pegar este kit novamente."
+  no-permission: "§cVocê não tem permissão para este kit (Rank necessário)."
+  locked-level: "§cVocê precisa estar no nível {LEVEL} de XP."
+  inventory-full: "§cSeu inventário está cheio!"
+
+gui:
+  title: "§8Central de Kits"
+  content: "§7Escolha um kit para equipar."
+  # Ícones podem ser: path (texturas) ou url (links)
+
+kits:
+  membro:
+    name: "§eSobrevivente"
+    description: "Kit básico para iniciar."
+    icon: "textures/items/bread"
+    cooldown: 3600 # 1 hora em segundos
+    permission: "kit.membro"
+    unlock-level: 0
+    items:
+      - "minecraft:stone_sword:1"
+      - "minecraft:bread:16"
+      - "minecraft:leather_helmet:1"
+    buffs:
+      speed: 1 # Nível do efeito (1 = Speed I)
+      duration: 120 # Segundos
+
+  vip:
+    name: "§bGuerreiro VIP"
+    description: "Equipamento de elite."
+    icon: "textures/items/diamond_sword"
+    cooldown: 86400 # 24 horas
+    permission: "kit.vip"
+    unlock-level: 10
+    items:
+      - "minecraft:diamond_sword:1"
+      - "minecraft:golden_apple:5"
+      - "minecraft:iron_chestplate:1"
+    buffs:
+      strength: 2
+      duration: 300

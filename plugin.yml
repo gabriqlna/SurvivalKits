@@ -1,0 +1,17 @@
+name: SurvivalKits
+version: 1.0.0
+main: SurvivalKits\Main
+api: 5.0.0
+author: gabriqlna
+softdepend: [FormAPI, PlaceholderAPI, PurePerms, ScoreHud]
+
+commands:
+  kit:
+    description: "Abre o menu de kits"
+    usage: "/kit [nome]"
+    aliases: ["kits"]
+
+permissions:
+  survivalkits.use:
+    default: true
+    description: "Permite usar o comando /kit"
