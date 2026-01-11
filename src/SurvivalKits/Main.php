@@ -24,7 +24,7 @@ class Main extends PluginBase {
         // Registro de Placeholders (Integração ScoreHud/PAPI)
         if($this->getServer()->getPluginManager()->getPlugin("PlaceholderAPI") !== null){
             // Exemplo: %survivalkits_cooldown_vip%
-            \poggit\libasynql\libasynql::register($this); // Apenas se usar SQL, mas mantemos simples
+          // Apenas se usar SQL, mas mantemos simples
             // A lógica real de placeholders seria registrada aqui via hook
         }
 
@@ -58,3 +58,4 @@ class Main extends PluginBase {
         return false;
     }
 }
+
