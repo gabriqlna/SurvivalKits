@@ -12,7 +12,7 @@ use pocketmine\item\StringToItemParser;
 use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\StringToEffectParser;
 use pocketmine\item\Item;
-use jojoe77777\FormAPI\SimpleForm;
+// Usando as classes que você já validou no BugReportLite
 use BugReportLite\Forms\SimpleForm;
 
 class KitManager {
@@ -23,7 +23,6 @@ class KitManager {
 
     public function __construct(Main $plugin) {
         $this->plugin = $plugin;
-        // Salva cooldowns em arquivo para não perder ao reiniciar
         $this->data = new Config($plugin->getDataFolder() . "cooldowns.json", Config::JSON);
         $this->cooldowns = $this->data->getAll();
     }
@@ -32,35 +31,19 @@ class KitManager {
         $this->data->setAll($this->cooldowns);
         $this->data->save();
     }
-       // No KitManager.php
-public function getCooldownString(Player $player, string $kitName): string {
-    $kits = $this->plugin->getConfig()->get("kits");
-    if(!isset($kits[$kitName])) return "N/A";
-    
-    $left = $this->getCooldownLeft($player, $kitName, (int)$kits[$kitName]['cooldown']);
-    if($left <= 0) return "§aPronto";
-    
-    return gmdate("H:i:s", $left);
-}
-
-
-    // --- LÓGICA DE COOLDOWN ---
 
     public function getCooldownLeft(Player $player, string $kitName, int $cooldownSeconds): int {
         $name = strtolower($player->getName());
-        if (!isset($this->cooldowns[$name][$kitName])) {
-            return 0;
-        }
+        if (!isset($this->cooldowns[$name][$kitName])) return 0;
 
         $lastUsed = $this->cooldowns[$name][$kitName];
         $timePassed = time() - $lastUsed;
 
         if ($timePassed >= $cooldownSeconds) {
             unset($this->cooldowns[$name][$kitName]);
-            $this->saveData(); // Limpa lixo do JSON
+            $this->saveData();
             return 0;
         }
-
         return $cooldownSeconds - $timePassed;
     }
 
@@ -68,68 +51,43 @@ public function getCooldownString(Player $player, string $kitName): string {
         $this->cooldowns[strtolower($player->getName())][$kitName] = time();
         $this->saveData();
     }
-        
-
-    // --- LÓGICA DE ENTREGA ---
 
     public function attemptClaim(Player $player, string $kitKey): void {
         $config = $this->plugin->getConfig();
         $kit = $config->getNested("kits.$kitKey");
 
-        if ($kit === null) {
-            $player->sendMessage($config->getNested("settings.prefix") . "§cKit não encontrado.");
-            return;
-        }
+        if ($kit === null) return;
 
-        // 1. Verifica Permissão (PurePerms/Nativo)
+        // 1. Permissão
         if (isset($kit['permission']) && !$player->hasPermission($kit['permission'])) {
             $player->sendMessage($config->getNested("settings.prefix") . $config->getNested("messages.no-permission"));
             return;
         }
 
-        // 2. Verifica Nível (XP)
+        // 2. Nível XP
         if (isset($kit['unlock-level']) && $player->getXpManager()->getXpLevel() < $kit['unlock-level']) {
             $msg = str_replace("{LEVEL}", (string)$kit['unlock-level'], $config->getNested("messages.locked-level"));
             $player->sendMessage($config->getNested("settings.prefix") . $msg);
             return;
         }
 
-        // No KitManager.php, dentro do attemptClaim ou openKitForm:
+        // 3. Cooldown
+        $timeLeft = $this->getCooldownLeft($player, $kitKey, (int)$kit['cooldown']);
+        if ($timeLeft > 0) {
+            $timeStr = TimeUtils::formatTime($timeLeft);
+            $msg = str_replace("{TIME}", $timeStr, $config->getNested("messages.cooldown"));
+            $player->sendMessage($config->getNested("settings.prefix") . $msg);
+            return;
+        }
 
-$timeLeft = $this->getCooldownLeft($player, $kitKey, (int)$kit['cooldown']);
-
-if ($timeLeft > 0) {
-    // Em vez de gmdate, usamos nossa Utils
-    $timeStr = TimeUtils::formatTime($timeLeft); 
-    
-    $msg = str_replace("{TIME}", $timeStr, $config->getNested("messages.cooldown"));
-    $player->sendMessage($config->getNested("settings.prefix") . $msg);
-    return;
-}
-
-
-        // 4. Entrega Itens
+        // 4. Inventário e Itens
         $inv = $player->getInventory();
         $itemsToAdd = [];
-        
         foreach ($kit['items'] as $itemStr) {
-            // Formato: "minecraft:stone_sword:1" ou "stone_sword:1"
-            $parts = explode(":", $itemStr);
-            $name = $parts[0] . ":" . ($parts[1] ?? "0"); // Resolve namespace se houver
-            if(count($parts) === 3) $name = $parts[0] . ":" . $parts[1]; // Handle minecraft:item
-            
-            $count = (int)end($parts);
-            
-            // Parser de itens da API 5
             $item = StringToItemParser::getInstance()->parse($itemStr);
-            if ($item instanceof Item) {
-                // Se a string já tinha quantidade no parser, ok, senão força
-                // Como o parser as vezes ignora quantidade no final da string se não for padrão:
-                $itemsToAdd[] = $item; 
-            }
+            if ($item instanceof Item) $itemsToAdd[] = $item;
         }
-        
-        // Verifica espaço
+
         if (!$inv->canAddItem(...$itemsToAdd)) {
             $player->sendMessage($config->getNested("settings.prefix") . $config->getNested("messages.inventory-full"));
             return;
@@ -137,81 +95,57 @@ if ($timeLeft > 0) {
 
         $inv->addItem(...$itemsToAdd);
 
-        // 5. Aplica Buffs
+        // 5. Buffs
         if (isset($kit['buffs'])) {
+            $duration = (int)($kit['buffs']['duration'] ?? 60) * 20;
             foreach ($kit['buffs'] as $effectName => $level) {
                 if ($effectName === "duration") continue;
-                
-                $effect = StringToEffectParser::getInstance()->parse($effectName);
+                $effect = StringToEffectParser::getInstance()->parse((string)$effectName);
                 if ($effect !== null) {
-                    $duration = (int)($kit['buffs']['duration'] ?? 60) * 20; // Converte para ticks
-                    $player->getEffects()->add(new EffectInstance($effect, $duration, $level - 1));
+                    $player->getEffects()->add(new EffectInstance($effect, $duration, (int)$level - 1));
                 }
             }
         }
 
-        // 6. Finalização
         $this->setCooldown($player, $kitKey);
         $msg = str_replace("{KIT}", $kit['name'], $config->getNested("messages.received"));
         $player->sendMessage($config->getNested("settings.prefix") . $msg);
-        
-        // Toca som
-        $sound = $config->getNested("settings.sound-success", "random.levelup");
-        // Implementação simplificada de som via pacote (omitida para brevidade)
     }
 
-    // --- GUI FORMAPI ---
     public function openKitForm(Player $player): void {
-    // Criamos o formulário usando a classe que você já validou no outro plugin
-    $form = new SimpleForm(function (Player $player, $data) {
-        if ($data === null) return;
-        $this->attemptClaim($player, (string)$data);
-    });
+        $form = new SimpleForm(function (Player $player, $data) {
+            if ($data === null) return;
+            $this->attemptClaim($player, (string)$data);
+        });
 
-    $config = $this->plugin->getConfig();
-    $form->setTitle($config->getNested("gui.title", "§l§6Kits"));
-    $form->setContent($config->getNested("gui.content", "Escolha seu kit:"));
+        $config = $this->plugin->getConfig();
+        $form->setTitle($config->getNested("gui.title", "§l§6Kits"));
+        $form->setContent($config->getNested("gui.content", "Escolha seu kit:"));
 
-    $kits = $config->get("kits", []);
-    
-    // Se não houver kits, o formulário avisa em vez de não abrir
-    if(empty($kits)){
-        $player->sendMessage("§cNão há kits configurados no momento.");
-        return;
-    }
+        $kits = $config->get("kits", []);
+        if (empty($kits)) {
+            $player->sendMessage("§cNão há kits configurados.");
+            return;
+        }
 
-    foreach ($kits as $key => $kit) {
-        $timeLeft = $this->getCooldownLeft($player, (string)$key, (int)$kit['cooldown']);
-        $status = ($timeLeft > 0) ? "§c" . TimeUtils::formatTime($timeLeft) : "§aDisponível";
-        
-        $form->addButton($kit['name'] . "\n" . $status, -1, "", (string)$key);
-    }
+        foreach ($kits as $key => $kit) {
+            $timeLeft = $this->getCooldownLeft($player, (string)$key, (int)$kit['cooldown']);
+            $status = ($timeLeft > 0) ? "§c" . TimeUtils::formatTime($timeLeft) : "§aDisponível";
+            
+            $iconPath = $kit['icon'] ?? "";
+            $iconType = str_contains($iconPath, "http") ? 1 : 0;
+            if(empty($iconPath)) $iconType = -1;
 
-    $player->sendForm($form);
-}
-
-            // Adiciona status visual no botão
-            if ($timeLeft > 0) {
-                $name .= "\n§cEm Cooldown: " . gmdate("H:i:s", $timeLeft);
-            } elseif (isset($kit['permission']) && !$player->hasPermission($kit['permission'])) {
-                $name .= "\n§cBloqueado (Rank)";
-            } else {
-                $name .= "\n§aDisponível";
-            }
-
-            // Ícone
-            $iconType = -1;
-            $iconPath = "";
-            if (isset($kit['icon'])) {
-                $iconType = str_contains($kit['icon'], "http") ? 1 : 0;
-                $iconPath = $kit['icon'];
-            }
-
-            // O $key é enviado como data para o callback saber qual kit pegar
-            $form->addButton($name, $iconType, $iconPath, $key);
+            $form->addButton($kit['name'] . "\n" . $status, $iconType, $iconPath, (string)$key);
         }
 
         $player->sendForm($form);
     }
-}
 
+    public function getCooldownString(Player $player, string $kitName): string {
+        $kits = $this->plugin->getConfig()->get("kits", []);
+        if (!isset($kits[$kitName])) return "N/A";
+        $left = $this->getCooldownLeft($player, $kitName, (int)$kits[$kitName]['cooldown']);
+        return ($left <= 0) ? "§aPronto" : TimeUtils::formatTime($left);
+    }
+}
