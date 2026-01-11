@@ -82,14 +82,25 @@ class KitManager {
             return;
         }
 
-        // 4. Inventário e Itens
+                // 4. Inventário e Itens
         $inv = $player->getInventory();
         $itemsToAdd = [];
+        
         foreach ($kit['items'] as $itemStr) {
             $item = StringToItemParser::getInstance()->parse($itemStr);
-            if ($item instanceof Item) $itemsToAdd[] = $item;
+            if ($item instanceof Item) {
+                $itemsToAdd[] = $item;
+            }
         }
 
+        // CORREÇÃO: Verifica se a lista não está vazia antes de chamar canAddItem
+        if (empty($itemsToAdd)) {
+            $this->plugin->getLogger()->warning("O kit " . $kitKey . " foi configurado sem itens válidos!");
+            $player->sendMessage("§cEste kit está vazio ou configurado incorretamente.");
+            return;
+        }
+
+        // O uso de ...$itemsToAdd exige que o array tenha ao menos 1 item
         if (!$inv->canAddItem(...$itemsToAdd)) {
             $player->sendMessage($config->getNested("settings.prefix") . $config->getNested("messages.inventory-full"));
             return;
@@ -151,4 +162,5 @@ class KitManager {
         return ($left <= 0) ? "§aPronto" : TimeUtils::formatTime($left);
     }
 }
+
 
