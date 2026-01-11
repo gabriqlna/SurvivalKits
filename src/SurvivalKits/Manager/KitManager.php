@@ -13,6 +13,7 @@ use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\StringToEffectParser;
 use pocketmine\item\Item;
 use jojoe77777\FormAPI\SimpleForm;
+use BugReportLite\Forms\SimpleForm;
 
 class KitManager {
 
@@ -160,26 +161,35 @@ if ($timeLeft > 0) {
     }
 
     // --- GUI FORMAPI ---
-
     public function openKitForm(Player $player): void {
-        $api = $this->plugin->getServer()->getPluginManager()->getPlugin("FormAPI");
-        if ($api === null) return;
+    // Criamos o formulário usando a classe que você já validou no outro plugin
+    $form = new SimpleForm(function (Player $player, $data) {
+        if ($data === null) return;
+        $this->attemptClaim($player, (string)$data);
+    });
 
-        $form = new SimpleForm(function (Player $player, $data) {
-            if ($data === null) return;
-            $this->attemptClaim($player, $data);
-        });
+    $config = $this->plugin->getConfig();
+    $form->setTitle($config->getNested("gui.title", "§l§6Kits"));
+    $form->setContent($config->getNested("gui.content", "Escolha seu kit:"));
 
-        $config = $this->plugin->getConfig();
-        $form->setTitle($config->getNested("gui.title"));
-        $form->setContent($config->getNested("gui.content"));
+    $kits = $config->get("kits", []);
+    
+    // Se não houver kits, o formulário avisa em vez de não abrir
+    if(empty($kits)){
+        $player->sendMessage("§cNão há kits configurados no momento.");
+        return;
+    }
 
-        $kits = $config->get("kits", []);
+    foreach ($kits as $key => $kit) {
+        $timeLeft = $this->getCooldownLeft($player, (string)$key, (int)$kit['cooldown']);
+        $status = ($timeLeft > 0) ? "§c" . TimeUtils::formatTime($timeLeft) : "§aDisponível";
         
-        foreach ($kits as $key => $kit) {
-            $name = $kit['name'];
-            $timeLeft = $this->getCooldownLeft($player, $key, (int)$kit['cooldown']);
-            
+        $form->addButton($kit['name'] . "\n" . $status, -1, "", (string)$key);
+    }
+
+    $player->sendForm($form);
+}
+
             // Adiciona status visual no botão
             if ($timeLeft > 0) {
                 $name .= "\n§cEm Cooldown: " . gmdate("H:i:s", $timeLeft);
@@ -204,3 +214,4 @@ if ($timeLeft > 0) {
         $player->sendForm($form);
     }
 }
+
