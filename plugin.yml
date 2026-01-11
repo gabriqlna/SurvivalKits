@@ -7,11 +7,21 @@ softdepend: [FormAPI, PlaceholderAPI, PurePerms, ScoreHud]
 
 commands:
   kit:
-    description: "Abre o menu de kits"
+    description: "Abre o menu de kits ou resgata um kit direto"
     usage: "/kit [nome]"
     aliases: ["kits"]
+    permission: survivalkits.command
 
 permissions:
-  survivalkits.use:
+  survivalkits.command:
+    description: "Permite usar o comando base /kit"
     default: true
-    description: "Permite usar o comando /kit"
+
+  # Abaixo registramos as permissões que serão usadas nos kits do config.yml
+  kit.membro:
+    description: "Permissão para acessar o kit Membro"
+    default: true
+
+  kit.vip:
+    description: "Permissão para acessar o kit VIP"
+    default: op
