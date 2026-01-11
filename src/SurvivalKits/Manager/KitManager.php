@@ -82,32 +82,44 @@ class KitManager {
             return;
         }
 
-                // 4. Inventário e Itens
+                        // 4. Inventário e Itens
         $inv = $player->getInventory();
         $itemsToAdd = [];
         
         foreach ($kit['items'] as $itemStr) {
-            $item = StringToItemParser::getInstance()->parse($itemStr);
+            // Divide a string: "minecraft:stone_sword:1" -> ["minecraft", "stone_sword", "1"]
+            $parts = explode(":", $itemStr);
+            
+            // A quantidade é sempre o último elemento
+            $count = (int) array_pop($parts);
+            
+            // O resto é o nome do item (ex: "minecraft:stone_sword")
+            $itemName = implode(":", $parts);
+            
+            $item = StringToItemParser::getInstance()->parse($itemName);
+            
             if ($item instanceof Item) {
+                // Define a quantidade correta antes de adicionar à lista
+                $item->setCount($count);
                 $itemsToAdd[] = $item;
+            } else {
+                $this->plugin->getLogger()->error("Item inválido no kit: " . $itemName);
             }
         }
 
-        // CORREÇÃO: Verifica se a lista não está vazia antes de chamar canAddItem
         if (empty($itemsToAdd)) {
             $this->plugin->getLogger()->warning("O kit " . $kitKey . " foi configurado sem itens válidos!");
             $player->sendMessage("§cEste kit está vazio ou configurado incorretamente.");
             return;
         }
 
-        // O uso de ...$itemsToAdd exige que o array tenha ao menos 1 item
         if (!$inv->canAddItem(...$itemsToAdd)) {
             $player->sendMessage($config->getNested("settings.prefix") . $config->getNested("messages.inventory-full"));
             return;
         }
 
         $inv->addItem(...$itemsToAdd);
-
+        
         // 5. Buffs
         if (isset($kit['buffs'])) {
             $duration = (int)($kit['buffs']['duration'] ?? 60) * 20;
@@ -162,5 +174,6 @@ class KitManager {
         return ($left <= 0) ? "§aPronto" : TimeUtils::formatTime($left);
     }
 }
+
 
 
