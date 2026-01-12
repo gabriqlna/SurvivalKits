@@ -82,30 +82,55 @@ class KitManager {
             return;
         }
 
-                        // 4. Inventário e Itens
+              // 4. Inventário e Itens
         $inv = $player->getInventory();
         $itemsToAdd = [];
         
         foreach ($kit['items'] as $itemStr) {
-            // Divide a string: "minecraft:stone_sword:1" -> ["minecraft", "stone_sword", "1"]
+            // Divide a string por ":"
             $parts = explode(":", $itemStr);
-            
-            // A quantidade é sempre o último elemento
-            $count = (int) array_pop($parts);
-            
-            // O resto é o nome do item (ex: "minecraft:stone_sword")
-            $itemName = implode(":", $parts);
-            
+            $count = 1; // Valor padrão
+            $itemName = "";
+
+            if (count($parts) >= 3) {
+                // Formato minecraft:stone_sword:1
+                $count = (int) array_pop($parts);
+                $itemName = implode(":", $parts);
+            } elseif (count($parts) === 2) {
+                // Pode ser "item:quantidade" ou "minecraft:item"
+                if (is_numeric($parts[1])) {
+                    $count = (int) $parts[1];
+                    $itemName = $parts[0];
+                } else {
+                    $itemName = $itemStr; // É "minecraft:item" sem quantidade
+                }
+            } else {
+                $itemName = $itemStr;
+            }
+
+            // Tenta o parser oficial do PM5
             $item = StringToItemParser::getInstance()->parse($itemName);
             
+            // Se falhar, tenta forçar o prefixo minecraft: (alguns ambientes exigem)
+            if ($item === null && !str_contains($itemName, ":")) {
+                $item = StringToItemParser::getInstance()->parse("minecraft:" . $itemName);
+            }
+
             if ($item instanceof Item) {
-                // Define a quantidade correta antes de adicionar à lista
                 $item->setCount($count);
                 $itemsToAdd[] = $item;
             } else {
-                $this->plugin->getLogger()->error("Item inválido no kit: " . $itemName);
+                // Log de erro específico para você ver no console qual nome falhou
+                $this->plugin->getLogger()->error("§cFalha crítica ao ler item: §e$itemStr §7(Processado como: $itemName)");
             }
         }
+
+        if (empty($itemsToAdd)) {
+            $this->plugin->getLogger()->warning("O kit " . $kitKey . " não contém itens válidos no PM5.");
+            $player->sendMessage("§cErro interno: Itens do kit não reconhecidos pelo servidor.");
+            return;
+        }
+
 
         if (empty($itemsToAdd)) {
             $this->plugin->getLogger()->warning("O kit " . $kitKey . " foi configurado sem itens válidos!");
@@ -174,6 +199,7 @@ class KitManager {
         return ($left <= 0) ? "§aPronto" : TimeUtils::formatTime($left);
     }
 }
+
 
 
 
