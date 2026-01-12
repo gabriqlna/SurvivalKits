@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace SurvivalKits;
 
 use pocketmine\plugin\PluginBase;
+use pocketmine\player\Player;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
-use pocketmine\player\Player;
 use SurvivalKits\Manager\KitManager;
+use SurvivalKits\Expansion\KitExpansion; // Importe a classe nova
+use MohamadRZ4\Placeholder\PlaceholderAPI; // Importe a API
 
 class Main extends PluginBase {
 
@@ -21,36 +23,32 @@ class Main extends PluginBase {
 
         $this->kitManager = new KitManager($this);
 
-        // Registro de Placeholders (Integração ScoreHud/PAPI)
-        if($this->getServer()->getPluginManager()->getPlugin("PlaceholderAPI") !== null){
-            // Exemplo: %survivalkits_cooldown_vip%
-          // Apenas se usar SQL, mas mantemos simples
-            // A lógica real de placeholders seria registrada aqui via hook
+        // Registro da Expansão na PlaceholderAPI do MohamadRZ4
+        $papi = $this->getServer()->getPluginManager()->getPlugin("PlaceholderAPI");
+        if($papi !== null){
+            $api = PlaceholderAPI::getAPI();
+            if($api !== null){
+                $api->registerExpansion(new KitExpansion($this));
+                $this->getLogger()->info("§aExpansão de Kits registrada na PlaceholderAPI!");
+            }
         }
 
-        $this->getLogger()->info("SurvivalKits+ ativado com sucesso!");
+        $this->getLogger()->info("SurvivalKits+ ativado!");
     }
 
-    public static function getInstance(): self {
-        return self::$instance;
-    }
-
-    public function getKitManager(): KitManager {
-        return $this->kitManager;
-    }
+    public static function getInstance(): self { return self::$instance; }
+    public function getKitManager(): KitManager { return $this->kitManager; }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
         if (!$sender instanceof Player) {
-            $sender->sendMessage("Use in-game.");
+            $sender->sendMessage("Use este comando in-game.");
             return true;
         }
 
         if ($command->getName() === "kit") {
             if (isset($args[0])) {
-                // Tentativa direta: /kit vip
                 $this->kitManager->attemptClaim($sender, $args[0]);
             } else {
-                // Abrir GUI
                 $this->kitManager->openKitForm($sender);
             }
             return true;
@@ -58,4 +56,3 @@ class Main extends PluginBase {
         return false;
     }
 }
-
