@@ -4,6 +4,7 @@ main: SurvivalKits\Main
 api: 5.0.0
 author: gabriqlna
 softdepend: [FormAPI, PlaceholderAPI, PurePerms, ScoreHud]
+depend: [PlaceholderAPI]
 
 commands:
   kit:
@@ -25,3 +26,4 @@ permissions:
   kit.vip:
     description: "Permissão para acessar o kit VIP"
     default: op
+
