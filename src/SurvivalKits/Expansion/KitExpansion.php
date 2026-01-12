@@ -8,14 +8,18 @@ use SurvivalKits\Main;
 
 class KitExpansion extends PlaceholderExpansion {
 
-    private Main $plugin;
+    /**
+     * IMPORTANTE: Não declaramos "protected $plugin" aqui, 
+     * pois a classe PlaceholderExpansion já o faz.
+     */
 
     public function __construct(Main $plugin) {
-        $this->plugin = $plugin;
+        // Passamos o plugin para o construtor da classe pai
+        parent::__construct($plugin);
     }
 
     public function getIdentifier(): string {
-        return "kit"; // O que vem antes do underline: %kit_...%
+        return "kit";
     }
 
     public function getVersion(): string {
@@ -31,8 +35,12 @@ class KitExpansion extends PlaceholderExpansion {
             return null;
         }
 
-        // O $placeholder aqui é o que vem depois de %kit_
-        // Exemplo: se usar %kit_membro%, $placeholder será "membro"
-        return $this->plugin->getKitManager()->getCooldownString($player, $placeholder);
+        /** @var Main $plugin */
+        $plugin = $this->plugin;
+
+        // Acessamos o KitManager através do plugin herdado
+        return $plugin->getKitManager()->getCooldownString($player, $placeholder);
+    }
+}
     }
 }
