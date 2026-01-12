@@ -39,13 +39,24 @@ class Main extends PluginBase {
     public static function getInstance(): self { return self::$instance; }
     public function getKitManager(): KitManager { return $this->kitManager; }
 
-    public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
-        if (!$sender instanceof Player) {
-            $sender->sendMessage("Use este comando in-game.");
-            return true;
-        }
-
+        public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
         if ($command->getName() === "kit") {
+            if (isset($args[0]) && $args[0] === "reload") {
+                if (!$sender->hasPermission("kit.admin")) {
+                    $sender->sendMessage("§cSem permissão.");
+                    return true;
+                }
+                $this->reloadConfig();
+                $this->kitManager = new KitManager($this); // Recarrega os kits na memória
+                $sender->sendMessage("§aConfiguração de Kits recarregada!");
+                return true;
+            }
+
+            if (!$sender instanceof Player) {
+                $sender->sendMessage("Use in-game.");
+                return true;
+            }
+
             if (isset($args[0])) {
                 $this->kitManager->attemptClaim($sender, $args[0]);
             } else {
@@ -56,3 +67,4 @@ class Main extends PluginBase {
         return false;
     }
 }
+
