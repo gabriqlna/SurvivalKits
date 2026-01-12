@@ -1,7 +1,7 @@
 # 📦 SurvivalKits+
 **Sistema de Kits de Elite para PocketMine-MP (API 5.x)**
 
-SurvivalKits+ é um plugin modular e de alto desempenho projetado para servidores SMP (Survival Multiplayer). Ele permite a criação de kits totalmente configuráveis via interface visual (GUI), com controle rígido de permissões via PurePerms e exibição de cooldowns em tempo real no ScoreHud.
+SurvivalKits+ é um plugin modular e de alto desempenho projetado para servidores SMP (Survival Multiplayer). Ele permite a criação de kits totalmente configuráveis via interface visual (GUI), com controle rígido de permissões via PurePerms e exibição de cooldowns em tempo real no ScoreHud..
 
 ---
 
