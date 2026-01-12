@@ -10,7 +10,7 @@ class KitExpansion extends PlaceholderExpansion {
 
     /**
      * IMPORTANTE: Não declaramos "protected $plugin" aqui, 
-     * pois a classe PlaceholderExpansion já o faz.
+     * pois a classe PlacehlderExpansion já o faz.
      */
 
     public function __construct(Main $plugin) {
