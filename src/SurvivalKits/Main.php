@@ -10,7 +10,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use SurvivalKits\Manager\KitManager;
 use SurvivalKits\Expansion\KitExpansion; // Importe a classe nova
-use MohamadRZ4\Placeholder\PlaceholderAPI; // Importe a API
+use MohamadRZ4\Placeholder\PlaceholderAPI; // Importe a AP
 
 class Main extends PluginBase {
 
@@ -67,4 +67,5 @@ class Main extends PluginBase {
         return false;
     }
 }
+
 
